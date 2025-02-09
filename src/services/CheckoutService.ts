@@ -2,6 +2,7 @@ import { Customer, Order, PrismaClient } from "@prisma/client";
 import { CustomerData } from "../interfaces/CustomerData";
 import { PaymentData } from "../interfaces/PaymentData";
 import { SnackData } from "./../interfaces/SnackData";
+import PaymentService from "./PaymentService";
 export default class CheckoutService {
   private prisma: PrismaClient;
   constructor(prisma: PrismaClient) {
@@ -24,6 +25,8 @@ export default class CheckoutService {
     const customerCreated = await this.createCustomer(customer);
 
     const orderCreated = await this.createOrder(snacksInCart, customerCreated);
+
+    const transaction = await new PaymentService().process(orderCreated, customerCreated, payment);
   }
 
   private async createCustomer(customer: CustomerData): Promise<Customer> {
@@ -68,3 +71,5 @@ export default class CheckoutService {
     return orderCreated;
   }
 }
+
+// video 1703
