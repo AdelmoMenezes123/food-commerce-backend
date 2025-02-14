@@ -5,10 +5,19 @@ import { SnackData } from "./../interfaces/SnackData";
 import PaymentService from "./PaymentService";
 export default class CheckoutService {
   private prisma: PrismaClient;
-  constructor(prisma: PrismaClient) {
+  constructor() {
     this.prisma = new PrismaClient();
   }
-  async process(cart: SnackData[], customer: CustomerData, payment: PaymentData) {
+  async process(
+    cart: SnackData[],
+    customer: CustomerData,
+    payment: PaymentData
+  ): Promise<{
+    id: number;
+    transactionId: string;
+    status: string;
+  }> {
+    // TODO: puxar os dados de snacks do BD
     const snacks = await this.prisma.snack.findMany({
       where: {
         id: { in: cart.map((item) => item.id) },
@@ -22,11 +31,25 @@ export default class CheckoutService {
       subTotal: (cart.find((item) => item.id === 1)?.quantity ?? 0) * Number(snack.price),
     }));
 
+    // TODO: registrar os dados do cliente no BD
     const customerCreated = await this.createCustomer(customer);
 
-    const orderCreated = await this.createOrder(snacksInCart, customerCreated);
+    // TODO: criar uma ordem orderItem
+    let orderCreated = await this.createOrder(snacksInCart, customerCreated);
 
-    const transaction = await new PaymentService().process(orderCreated, customerCreated, payment);
+    // TODO: processar o pagamento
+    const { transactionId, status } = await new PaymentService().process(orderCreated, customerCreated, payment);
+
+    orderCreated = await this.prisma.order.update({
+      where: { id: orderCreated.id },
+      data: { status, transactionId },
+    });
+
+    return {
+      id: orderCreated.id,
+      transactionId: orderCreated.transactionId!,
+      status: orderCreated.status,
+    };
   }
 
   private async createCustomer(customer: CustomerData): Promise<Customer> {
@@ -71,5 +94,3 @@ export default class CheckoutService {
     return orderCreated;
   }
 }
-
-// video 1703

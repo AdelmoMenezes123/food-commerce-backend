@@ -73,8 +73,7 @@ interface checkoutRequest extends Request {
 app.post("/checkout", async (req: Request, res: Response) => {
   const { cart, customer, payment } = req.body;
 
-  const checkoutService = new CheckoutService(prisma);
-  checkoutService.process(cart, customer, payment);
+  const orderCreated = await new CheckoutService().process(cart, customer, payment);
 
   res.send({ message: "Checkout successful", success: true });
 });
@@ -85,4 +84,4 @@ app.listen(port, () => {
 
 export default app;
 
-// video 1402
+// 1801
